@@ -73,3 +73,4 @@ share one track width, so markers stay aligned at every level.
 plus `id`, `label`, `cameraId`; they are mock-only for now (`mockAlerts`).
 
 <!-- ponytail: no router, no state library, no API client layer — one page, one fetch. Add an API module when a second endpoint appears. -->
+# roadmap-dashboard
