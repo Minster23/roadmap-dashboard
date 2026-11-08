@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { AlertTriangle, ChevronDown, CircleAlert, Info, ZoomIn, ZoomOut } from "lucide-react";
 import type { Alert, AlertLevel } from "../types";
-import { ALERT_COLORS, ALERT_TEXT_COLORS, countByLevel, formatClock, timeBounds, toPercent } from "../data/mock";
+import { ALERT_COLORS, ALERT_TEXT_COLORS, formatClock, timeBounds, toPercent } from "../data/mock";
 
 const ICONS: Record<AlertLevel, typeof Info> = {
   critical: CircleAlert,
@@ -9,7 +9,6 @@ const ICONS: Record<AlertLevel, typeof Info> = {
   info: Info,
 };
 
-const LEVELS: AlertLevel[] = ["critical", "warning", "info"];
 const ROW_HEIGHT = 22;
 const TRACK_HEIGHT = 10;
 
@@ -37,9 +36,7 @@ function axisTicks(start: number, end: number): string[] {
 /**
  * Detections grouped per camera as a dropdown.
  * A closed row previews that camera's hour as a marker strip; opening it reveals
- * the camera's own axis, markers, and a detection list in its own scroll box —
- * one small frame shared by the axis, the track, and the rows, so the rest of
- * the timeline never moves.
+ * the event list on the left and the event timeline on the right side-by-side.
  */
 export function Timeline({
   alerts,
@@ -63,16 +60,16 @@ export function Timeline({
       .map(([cameraId, list]) => ({
         cameraId,
         list: [...list].sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp)),
-        counts: countByLevel(list),
       }))
       .sort((a, b) => b.list.length - a.list.length);
   }, [alerts]);
 
-  const total = countByLevel(alerts);
-
   /** Absolute marker buttons for one camera; `compact` is the collapsed preview strip. */
   const markers = (list: Alert[], compact: boolean) =>
     list.map((alert) => {
+      const conf = alert.confidence !== undefined ? ` (${Math.round(alert.confidence * 100)}%)` : "";
+      const titleText = `${alert.label}${conf} · ${alert.location} · ${formatClock(alert.timestamp)}`;
+      const ariaText = `${alert.label}${conf} at ${formatClock(alert.timestamp)}`;
       const Icon = ICONS[alert.level];
       const active = alert.id === selectedId;
       return (
@@ -80,8 +77,8 @@ export function Timeline({
           key={alert.id}
           type="button"
           onClick={() => onSelect(alert)}
-          title={`${alert.label} · ${alert.location} · ${formatClock(alert.timestamp)}`}
-          aria-label={`${alert.label} at ${formatClock(alert.timestamp)}`}
+          title={titleText}
+          aria-label={ariaText}
           aria-pressed={active}
           className={`absolute flex items-center justify-center rounded-sm ${ALERT_COLORS[alert.level]} ${
             active ? "ring-2 ring-fg" : compact ? "opacity-60 hover:opacity-100" : "opacity-80 hover:opacity-100"
@@ -120,11 +117,9 @@ export function Timeline({
       <header className="panel-header">
         <span>Detections · last hour</span>
         <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 normal-case tracking-normal sm:gap-x-3">
-          {LEVELS.map((level) => (
-            <span key={level} className={`flex items-center gap-1 ${ALERT_TEXT_COLORS[level]}`}>
-              {total[level]} <span className="hidden sm:inline">{level}</span>
-            </span>
-          ))}
+          <span className="flex items-center gap-1 text-muted">
+            <span className="font-mono text-fg">{alerts.length}</span> <span className="hidden sm:inline">detected</span>
+          </span>
           <span className="flex shrink-0 items-center gap-1" role="group" aria-label="Timeline zoom">
             {zoomButton(ZoomOut, Math.max(ZOOM_MIN, zoom / 2), "Zoom out")}
             <span className="w-8 text-center font-mono text-[10px] text-fg">{zoom}×</span>
@@ -136,7 +131,7 @@ export function Timeline({
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {groups.length === 0 && <p className="py-6 text-center text-xs text-muted">No detections in window</p>}
 
-        {groups.map(({ cameraId, list, counts }) => {
+        {groups.map(({ cameraId, list }) => {
           const open = cameraId === openCameraId;
           const panelId = `timeline-${cameraId}`;
           return (
@@ -160,65 +155,25 @@ export function Timeline({
                   <span className="relative h-3 min-w-0 flex-1 overflow-hidden rounded-sm bg-border/40">
                     {markers(list, true)}
                   </span>
-                  <span className="hidden shrink-0 items-center gap-2 text-[10px] sm:flex">
-                    {LEVELS.filter((level) => counts[level] > 0).map((level) => (
-                      <span key={level} className={`font-mono ${ALERT_TEXT_COLORS[level]}`}>
-                        {counts[level]}
-                      </span>
-                    ))}
-                  </span>
                   <span className="shrink-0 font-mono text-[10px] text-muted">{list.length}</span>
                 </button>
               </h3>
 
-              {/* Own scroll box: horizontal pan for the zoomed axis, vertical for the detection list.
-                  Overscroll is contained so neither wheel nor touch chains to the timeline behind it. */}
+              {/* Open accordion: Side-by-side layout (Event list on left, Event timeline on right) */}
               <div
                 id={panelId}
-                className={
-                  open
-                    ? "max-h-56 overflow-auto overscroll-contain border-t border-border/60 px-2 pb-2 sm:px-3"
-                    : "hidden"
-                }
+                className={open ? "border-t border-border/60 grid grid-cols-1 lg:grid-cols-[280px_1fr]" : "hidden"}
               >
-                <div style={{ width: trackWidth }} className="min-w-full">
-                  <div className="relative ml-[78px] mt-2 h-4 border-b border-border sm:ml-[118px]">
-                    {ticks.map((tick, index) => (
-                      <span
-                        key={tick}
-                        className={`absolute top-0 font-mono text-[10px] text-muted ${
-                          index === 0 ? "left-0" : index === ticks.length - 1 ? "right-0" : "-translate-x-1/2"
-                        }`}
-                        style={
-                          index === 0 || index === ticks.length - 1
-                            ? undefined
-                            : { left: `${(index / (ticks.length - 1)) * 100}%` }
-                        }
-                      >
-                        {tick}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="relative ml-[78px] sm:ml-[118px]">
-                    <div
-                      className="pointer-events-none absolute bottom-0 top-0 z-10 w-px bg-accent/50"
-                      style={{ left: `${nowPercent}%` }}
-                      aria-hidden
-                    />
-                    <div className="relative border-b border-border/60" style={{ height: ROW_HEIGHT }}>
-                      {markers(list, false)}
-                    </div>
-                  </div>
-
-                  <ul className="mt-1.5">
+                {/* Left: Event list (scrolls vertically) */}
+                <div className="max-h-52 overflow-y-auto overscroll-contain border-b border-border/60 p-2 lg:border-b-0 lg:border-r sm:p-3">
+                  <ul className="space-y-0.5">
                     {list.map((alert) => (
                       <li key={alert.id} className="leading-tight">
                         <button
                           type="button"
                           onClick={() => onSelect(alert)}
                           aria-pressed={alert.id === selectedId}
-                          className={`flex w-full items-center justify-between gap-2 rounded px-1.5 py-0.5 text-[11px] hover:bg-surface ${
+                          className={`flex w-full items-center justify-between gap-2 rounded px-1.5 py-1 text-[11px] hover:bg-surface ${
                             alert.id === selectedId ? "bg-surface" : ""
                           }`}
                         >
@@ -227,12 +182,51 @@ export function Timeline({
                               ●
                             </span>
                             {alert.label}
+                            {alert.confidence !== undefined && (
+                              <span className="ml-1.5 font-mono text-[10px] text-muted">
+                                {Math.round(alert.confidence * 100)}%
+                              </span>
+                            )}
                           </span>
                           <span className="shrink-0 font-mono text-[10px] text-muted">{formatClock(alert.timestamp)}</span>
                         </button>
                       </li>
                     ))}
                   </ul>
+                </div>
+
+                {/* Right: Event timeline (ticks + track, scrolls horizontally with zoom) */}
+                <div className="overflow-x-auto overflow-y-hidden overscroll-x-contain p-2 sm:p-3 flex items-center">
+                  <div style={{ width: trackWidth }} className="min-w-full">
+                    <div className="relative h-4 border-b border-border">
+                      {ticks.map((tick, index) => (
+                        <span
+                          key={tick}
+                          className={`absolute top-0 font-mono text-[10px] text-muted ${
+                            index === 0 ? "left-0" : index === ticks.length - 1 ? "right-0" : "-translate-x-1/2"
+                          }`}
+                          style={
+                            index === 0 || index === ticks.length - 1
+                              ? undefined
+                              : { left: `${(index / (ticks.length - 1)) * 100}%` }
+                          }
+                        >
+                          {tick}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="relative mt-2">
+                      <div
+                        className="pointer-events-none absolute bottom-0 top-0 z-10 w-px bg-accent/50"
+                        style={{ left: `${nowPercent}%` }}
+                        aria-hidden
+                      />
+                      <div className="relative border-b border-border/60" style={{ height: ROW_HEIGHT }}>
+                        {markers(list, false)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

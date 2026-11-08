@@ -3,3 +3,5 @@ dist
 bun.lock
 *.tsbuildinfo
 .agent/
+src/examples/
+src/examples

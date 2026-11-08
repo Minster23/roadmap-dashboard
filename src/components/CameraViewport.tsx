@@ -37,7 +37,11 @@ export function CameraViewport({ camera, latestAlert }: CameraViewportProps) {
         <span className="flex min-w-0 items-center gap-3">
           {latestAlert && (
             <span className={`truncate normal-case tracking-normal ${ALERT_TEXT_COLORS[latestAlert.level]}`}>
-              <span className="hidden sm:inline">{latestAlert.label} · </span>
+              <span className="hidden sm:inline">
+                {latestAlert.label}
+                {latestAlert.confidence !== undefined && ` (${Math.round(latestAlert.confidence * 100)}%)`}
+                {" · "}
+              </span>
               {formatDateTime(latestAlert.timestamp)}
             </span>
           )}

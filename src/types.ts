@@ -15,6 +15,10 @@ export interface Alert {
   label: string;
   /** Camera that observed the alert. */
   cameraId: string;
+  /** Detector score 0..1; absent on mock data. */
+  confidence?: number;
+  /** Detection box normalized to 0..1 of the frame; absent on mock data. */
+  bbox?: [number, number, number, number];
 }
 
 /** A connected surveillance camera. */

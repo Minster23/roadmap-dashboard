@@ -9,10 +9,13 @@ interface CameraListProps {
   onSelect: (id: string) => void;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
+const CAMERAS_ENDPOINT = import.meta.env.VITE_CAMERAS_ENDPOINT ?? "/api/cameras";
+
 /**
  * Connected cameras.
  * A vertical sidebar from `lg` up; a horizontally scrolling strip below it.
- * Fetches the inventory from `/api/cameras` via Axios and keeps the provided
+ * Fetches the inventory from the configured API endpoint via Axios and keeps the provided
  * (mock) list when the backend is unreachable or returns something else.
  */
 export function CameraList({ cameras, selectedId, onSelect }: CameraListProps) {
@@ -20,8 +23,9 @@ export function CameraList({ cameras, selectedId, onSelect }: CameraListProps) {
 
   useEffect(() => {
     const controller = new AbortController();
+    const url = `${API_BASE}${CAMERAS_ENDPOINT}`;
     axios
-      .get<Camera[]>("/api/cameras", { signal: controller.signal })
+      .get<Camera[]>(url, { signal: controller.signal })
       .then((response) => setRemoteCameras(Array.isArray(response.data) ? response.data : null))
       .catch(() => setRemoteCameras(null));
     return () => controller.abort();
