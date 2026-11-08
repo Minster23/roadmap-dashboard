@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* light theme — flat, desaturated, no gradients */
+  --surface: 245 246 247;
+  --panel: 255 255 255;
+  --border: 219 222 226;
+  --fg: 28 30 34;
+  --muted: 110 117 126;
+  --accent: 63 105 156;
+  --alert: 163 76 76;
+  --warn: 150 116 62;
+  --ok: 88 122 105;
+}
+
+.dark {
+  --surface: 22 23 26;
+  --panel: 28 30 34;
+  --border: 52 56 62;
+  --fg: 219 222 227;
+  --muted: 133 140 150;
+  --accent: 118 152 194;
+  --alert: 186 105 105;
+  --warn: 178 146 98;
+  --ok: 118 155 136;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-surface text-fg antialiased;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Desaturated severity ramps for the gantt markers: color stays, saturation does not. */
+@layer components {
+  .panel {
+    @apply rounded border border-border bg-panel;
+  }
+  .panel-header {
+    @apply flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-border px-2.5 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted sm:px-3;
+  }
+  .btn {
+    @apply inline-flex items-center gap-1.5 rounded border border-border px-2.5 py-1.5 text-xs font-medium text-fg hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn border-accent bg-accent text-white hover:bg-accent/90;
+  }
+  .field {
+    @apply w-full rounded border border-border bg-surface px-2 py-1.5 text-sm text-fg outline-none focus:border-accent;
+  }
+}
