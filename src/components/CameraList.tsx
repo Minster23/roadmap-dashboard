@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Star, Video, VideoOff } from "lucide-react";
 import type { Camera } from "../types";
+import { parseCameras } from "../data/api";
 
 interface CameraListProps {
   cameras: Camera[];
@@ -25,8 +26,8 @@ export function CameraList({ cameras, selectedId, onSelect }: CameraListProps) {
     const controller = new AbortController();
     const url = `${API_BASE}${CAMERAS_ENDPOINT}`;
     axios
-      .get<Camera[]>(url, { signal: controller.signal })
-      .then((response) => setRemoteCameras(Array.isArray(response.data) ? response.data : null))
+      .get(url, { signal: controller.signal })
+      .then((response) => setRemoteCameras(parseCameras(response.data)))
       .catch(() => setRemoteCameras(null));
     return () => controller.abort();
   }, []);

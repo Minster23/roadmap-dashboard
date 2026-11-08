@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { detectionsToAlerts, ensureCamera, mergeAlerts, type DetectionRequest } from "./api";
+import { detectionsToAlerts, ensureCamera, mergeAlerts, parseCameras, type DetectionRequest } from "./api";
 import { CAMERAS } from "./mock";
 
 /** Mirrors examples/exampleReq.json. */
@@ -58,4 +58,14 @@ test("ensureCamera registers an unknown camera once", () => {
   expect(cameras.at(-1)?.id).toBe("CAM-JKT-01");
   expect(ensureCamera(cameras, payload)).toBe(cameras);
   expect(ensureCamera(CAMERAS, { Camera: CAMERAS[0].id, detection: [] })).toBe(CAMERAS);
+});
+test("parseCameras handles array and devices object wrapper", () => {
+  const arr = [{ id: "c1", name: "Cam 1", location: "Here", streamUrl: "", status: "online" as const }];
+  expect(parseCameras(arr)).toEqual(arr);
+  const wrapped = { devices: [{ id: "d1", name: "Device 1", active: true }] };
+  const parsed = parseCameras(wrapped);
+  expect(parsed).toEqual([
+    { id: "d1", name: "Device 1", location: "Device 1", streamUrl: expect.any(String), status: "online" },
+  ]);
+  expect(parseCameras(null)).toBeNull();
 });

@@ -101,6 +101,37 @@ export function mergeAlerts(existing: Alert[], incoming: Alert[], cap = 300): Al
     .slice(0, cap);
 }
 
+/** Device record format from API /v1/dashboard/devices. */
+export interface DeviceRecord {
+  id: string;
+  name: string;
+  location?: string;
+  active?: boolean;
+  status?: "online" | "offline";
+}
+
+/** Parses camera list whether returned as Camera[] or { devices: [...] }. */
+export function parseCameras(data: unknown): Camera[] | null {
+  if (Array.isArray(data)) {
+    return data as Camera[];
+  }
+  if (data && typeof data === "object" && "devices" in data && Array.isArray((data as { devices: unknown }).devices)) {
+    return ((data as { devices: Array<Record<string, unknown>> }).devices).map((d) => {
+      const id = String(d.id ?? d.name ?? "cam");
+      const name = String(d.name ?? id);
+      const location = String(d.location ?? name);
+      const isOnline = d.active === true || d.status === "online";
+      return {
+        id,
+        name,
+        location,
+        streamUrl: placeholderImage(name.toUpperCase()),
+        status: isOnline ? "online" : "offline",
+      };
+    });
+  }
+  return null;
+}
 /** Ensures a camera referenced by detections exists in the list, so its row can render. */
 export function ensureCamera(cameras: Camera[], payload: DetectionRequest): Camera[] {
   if (cameras.some((camera) => camera.id === payload.Camera)) return cameras;
