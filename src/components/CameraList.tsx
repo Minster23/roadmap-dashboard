@@ -12,12 +12,13 @@ interface CameraListProps {
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 const CAMERAS_ENDPOINT = import.meta.env.VITE_CAMERAS_ENDPOINT ?? "/api/cameras";
+const DASHBOARD_TOKEN = import.meta.env.VITE_DASHBOARD_TOKEN ?? "";
 
 /**
  * Connected cameras.
  * A vertical sidebar from `lg` up; a horizontally scrolling strip below it.
- * Fetches the inventory from the configured API endpoint via Axios and keeps the provided
- * (mock) list when the backend is unreachable or returns something else.
+ * Fetches the inventory from the configured API endpoint via Axios (with optional Bearer token)
+ * and keeps the provided (mock) list when the backend is unreachable or returns something else.
  */
 export function CameraList({ cameras, selectedId, onSelect }: CameraListProps) {
   const [remoteCameras, setRemoteCameras] = useState<Camera[] | null>(null);
@@ -25,8 +26,12 @@ export function CameraList({ cameras, selectedId, onSelect }: CameraListProps) {
   useEffect(() => {
     const controller = new AbortController();
     const url = `${API_BASE}${CAMERAS_ENDPOINT}`;
+    const headers: Record<string, string> = {};
+    if (DASHBOARD_TOKEN) {
+      headers["Authorization"] = `Bearer ${DASHBOARD_TOKEN}`;
+    }
     axios
-      .get(url, { signal: controller.signal })
+      .get(url, { headers, signal: controller.signal })
       .then((response) => setRemoteCameras(parseCameras(response.data)))
       .catch(() => setRemoteCameras(null));
     return () => controller.abort();
@@ -40,7 +45,7 @@ export function CameraList({ cameras, selectedId, onSelect }: CameraListProps) {
         <span>Cameras</span>
         <span>{items.filter((c) => c.status === "online").length}/{items.length} online</span>
       </header>
-      <ul className="flex snap-x gap-px overflow-x-auto lg:block lg:flex-1 lg:overflow-y-auto lg:overflow-x-hidden">
+      <ul className="flex snap-x gap-px overflow-x-auto lg:block lg:flex-1 lg:overflow-y-auto lg:overflow-x-hidden p-1.5 sm:p-2">
         {items.map((camera) => {
           const active = camera.id === selectedId;
           return (
@@ -49,20 +54,20 @@ export function CameraList({ cameras, selectedId, onSelect }: CameraListProps) {
                 type="button"
                 onClick={() => onSelect(camera.id)}
                 aria-current={active ? "true" : undefined}
-                className={`flex w-52 items-start gap-2 border-l-2 px-3 py-2 text-left text-sm hover:bg-surface lg:w-full ${
-                  active ? "border-accent bg-surface" : "border-transparent"
+                className={`flex w-56 items-start gap-3 border-l-2 px-3.5 py-3 text-left text-sm hover:bg-surface lg:w-full rounded-md ${
+                  active ? "border-accent bg-surface font-medium" : "border-transparent"
                 }`}
               >
                 {camera.status === "online" ? (
-                  <Video size={14} className="mt-0.5 shrink-0 text-muted" aria-label="online" />
+                  <Video size={16} className="mt-0.5 shrink-0 text-muted" aria-label="online" />
                 ) : (
-                  <VideoOff size={14} className="mt-0.5 shrink-0 text-muted/60" aria-label="offline" />
+                  <VideoOff size={16} className="mt-0.5 shrink-0 text-muted/60" aria-label="offline" />
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{camera.name}</span>
-                  <span className="block truncate text-xs text-muted">{camera.location}</span>
+                  <span className="block truncate text-xs text-muted mt-0.5">{camera.location}</span>
                 </span>
-                {active && <Star size={12} className="mt-1 shrink-0 text-accent" aria-hidden />}
+                {active && <Star size={13} className="mt-1 shrink-0 text-accent" aria-hidden />}
               </button>
             </li>
           );

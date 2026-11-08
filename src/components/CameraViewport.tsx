@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { CameraOff, Maximize2, Minimize2, Radio } from "lucide-react";
 import type { Alert, Camera } from "../types";
-import { ALERT_TEXT_COLORS, formatDateTime } from "../data/mock";
+import { ALERT_TEXT_COLORS, formatDateTime } from "../data/utils";
 
 interface CameraViewportProps {
   camera: Camera | undefined;
@@ -30,11 +30,11 @@ export function CameraViewport({ camera, latestAlert }: CameraViewportProps) {
       aria-label="Camera viewport"
     >
       <header className="panel-header">
-        <span className="flex min-w-0 items-center gap-1.5 normal-case tracking-normal">
-          <Radio size={13} className={camera?.status === "online" ? "shrink-0 text-fg" : "shrink-0 text-muted"} />
+        <span className="flex min-w-0 items-center gap-2 normal-case tracking-normal font-medium">
+          <Radio size={14} className={camera?.status === "online" ? "shrink-0 text-fg" : "shrink-0 text-muted"} />
           <span className="truncate text-fg">{camera?.name ?? "No camera selected"}</span>
         </span>
-        <span className="flex min-w-0 items-center gap-3">
+        <span className="flex min-w-0 items-center gap-4">
           {latestAlert && (
             <span className={`truncate normal-case tracking-normal ${ALERT_TEXT_COLORS[latestAlert.level]}`}>
               <span className="hidden sm:inline">
@@ -47,12 +47,12 @@ export function CameraViewport({ camera, latestAlert }: CameraViewportProps) {
           )}
           <button
             type="button"
-            className="btn shrink-0 px-1.5 py-1"
+            className="btn shrink-0 px-2 py-1"
             onClick={() => setFullscreen((value) => !value)}
             aria-pressed={fullscreen}
             aria-label={fullscreen ? "Exit fullscreen viewport" : "Fullscreen viewport"}
           >
-            {fullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            {fullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
           </button>
         </span>
       </header>
@@ -65,13 +65,13 @@ export function CameraViewport({ camera, latestAlert }: CameraViewportProps) {
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-muted">
-            <CameraOff size={28} />
+          <div className="flex h-full flex-col items-center justify-center gap-2.5 text-muted">
+            <CameraOff size={32} />
             <span className="text-sm">{camera ? "Camera offline" : "Select a camera"}</span>
           </div>
         )}
-        <span className="absolute left-2 top-2 flex items-center gap-1.5 rounded bg-black/60 px-2 py-1 font-mono text-[11px] text-white">
-          <span className={`h-1.5 w-1.5 rounded-full ${camera?.status === "online" ? "bg-fg" : "bg-muted/60"}`} />
+        <span className="absolute left-3 top-3 flex items-center gap-2 rounded-md bg-black/70 px-3 py-1.5 text-xs text-white">
+          <span className={`h-2 w-2 rounded-full ${camera?.status === "online" ? "bg-fg" : "bg-muted/60"}`} />
           {camera?.status === "online" ? "REC" : "OFFLINE"} · {camera?.id.toUpperCase() ?? "—"}
         </span>
       </div>

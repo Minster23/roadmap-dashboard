@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { detectionsToAlerts, ensureCamera, mergeAlerts, parseCameras, type DetectionRequest } from "./api";
-import { CAMERAS } from "./mock";
+import type { Camera } from "../types";
 
 /** Mirrors examples/exampleReq.json. */
 const payload: DetectionRequest = {
@@ -10,6 +10,10 @@ const payload: DetectionRequest = {
     { event: "helmet_off", time: "2026-11-08T10:15:31.500Z", label: "motorcycle", confidence: 0.87, bbox: [300, 500, 420, 700] },
   ],
 };
+
+const TEST_CAMERAS: Camera[] = [
+  { id: "cam-01", name: "Cam 1", location: "Loc 1", streamUrl: "", status: "online" },
+];
 
 test("detectionsToAlerts maps the wire payload to alerts", () => {
   const alerts = detectionsToAlerts(payload);
@@ -53,12 +57,13 @@ test("mergeAlerts dedupes by id and sorts newest first", () => {
 });
 
 test("ensureCamera registers an unknown camera once", () => {
-  const cameras = ensureCamera(CAMERAS, payload);
-  expect(cameras).toHaveLength(CAMERAS.length + 1);
+  const cameras = ensureCamera(TEST_CAMERAS, payload);
+  expect(cameras).toHaveLength(TEST_CAMERAS.length + 1);
   expect(cameras.at(-1)?.id).toBe("CAM-JKT-01");
   expect(ensureCamera(cameras, payload)).toBe(cameras);
-  expect(ensureCamera(CAMERAS, { Camera: CAMERAS[0].id, detection: [] })).toBe(CAMERAS);
+  expect(ensureCamera(TEST_CAMERAS, { Camera: TEST_CAMERAS[0].id, detection: [] })).toBe(TEST_CAMERAS);
 });
+
 test("parseCameras handles array and devices object wrapper", () => {
   const arr = [{ id: "c1", name: "Cam 1", location: "Here", streamUrl: "", status: "online" as const }];
   expect(parseCameras(arr)).toEqual(arr);

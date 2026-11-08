@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { Alert, Camera } from "./types";
-import { CAMERAS, mockAlerts } from "./data/mock";
 import { detectionsToAlerts, ensureCamera, mergeAlerts, type DetectionRequest } from "./data/api";
 import { useTheme } from "./hooks/useTheme";
 import { Navbar } from "./components/Navbar";
@@ -11,12 +10,18 @@ import { Timeline, ZOOM_MAX, ZOOM_MIN } from "./components/Timeline";
 /** Dashboard shell: navbar, camera list, viewport, and per-camera detection dropdowns. */
 export default function App() {
   const { theme, toggleTheme } = useTheme();
-  const [cameras, setCameras] = useState<Camera[]>(CAMERAS);
-  const [alerts, setAlerts] = useState<Alert[]>(() => mockAlerts(CAMERAS));
-  const [selectedCameraId, setSelectedCameraId] = useState(CAMERAS[0].id);
+  const [cameras, setCameras] = useState<Camera[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>("");
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
-  const [openCameraId, setOpenCameraId] = useState<string | null>(CAMERAS[0].id);
+  const [openCameraId, setOpenCameraId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
+
+  // Auto-select first camera if none selected and cameras are available
+  if (!selectedCameraId && cameras.length > 0) {
+    setSelectedCameraId(cameras[0].id);
+    setOpenCameraId(cameras[0].id);
+  }
 
   const selectedCamera = cameras.find((camera) => camera.id === selectedCameraId);
   const selectedAlert = alerts.find((alert) => alert.id === selectedAlertId);
@@ -47,8 +52,11 @@ export default function App() {
 
   /** Feeds one pushed detection payload (backend wire format) into the dashboard. */
   const handleDetection = (payload: DetectionRequest) => {
-    setCameras((current) => ensureCamera(current, payload));
-    setAlerts((current) => mergeAlerts(current, detectionsToAlerts(payload)));
+    setCameras((current) => {
+      const nextCameras = ensureCamera(current, payload);
+      setAlerts((alertsCurrent) => mergeAlerts(alertsCurrent, detectionsToAlerts(payload, nextCameras)));
+      return nextCameras;
+    });
   };
 
   // ponytail: push arrives via window hook until the SSE client lands; backend POSTs the payload as-is

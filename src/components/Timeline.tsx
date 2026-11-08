@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { AlertTriangle, ChevronDown, CircleAlert, Info, ZoomIn, ZoomOut } from "lucide-react";
 import type { Alert, AlertLevel } from "../types";
-import { ALERT_COLORS, ALERT_TEXT_COLORS, formatClock, timeBounds, toPercent } from "../data/mock";
+import { ALERT_COLORS, ALERT_TEXT_COLORS, formatClock, timeBounds, toPercent } from "../data/utils";
 
 const ICONS: Record<AlertLevel, typeof Info> = {
   critical: CircleAlert,
@@ -9,7 +9,7 @@ const ICONS: Record<AlertLevel, typeof Info> = {
   info: Info,
 };
 
-const ROW_HEIGHT = 22;
+const ROW_HEIGHT = 24;
 const TRACK_HEIGHT = 10;
 
 /** Zoom steps; 1 fits the window to the panel, higher values widen the axis (scroll to pan). */
@@ -36,7 +36,7 @@ function axisTicks(start: number, end: number): string[] {
 /**
  * Detections grouped per camera as a dropdown.
  * A closed row previews that camera's hour as a marker strip; opening it reveals
- * the event list on the left and the event timeline on the right side-by-side.
+ * the event list on the left and the event timeline on the right side-by-side with generous spacing.
  */
 export function Timeline({
   alerts,
@@ -80,21 +80,21 @@ export function Timeline({
           title={titleText}
           aria-label={ariaText}
           aria-pressed={active}
-          className={`absolute flex items-center justify-center rounded-sm ${ALERT_COLORS[alert.level]} ${
-            active ? "ring-2 ring-fg" : compact ? "opacity-60 hover:opacity-100" : "opacity-80 hover:opacity-100"
+          className={`absolute flex items-center justify-center rounded ${ALERT_COLORS[alert.level]} ${
+            active ? "ring-2 ring-fg" : compact ? "opacity-70 hover:opacity-100" : "opacity-90 hover:opacity-100"
           }`}
           style={
             compact
-              ? { left: `calc(${toPercent(alert.timestamp, start, end)}% - 1px)`, top: 0, bottom: 0, width: 3 }
+              ? { left: `calc(${toPercent(alert.timestamp, start, end)}% - 1.5px)`, top: 0, bottom: 0, width: 3 }
               : {
-                  left: `calc(${toPercent(alert.timestamp, start, end)}% - 3px)`,
-                  top: (ROW_HEIGHT - TRACK_HEIGHT) / 2 - 5,
-                  width: 7,
-                  height: TRACK_HEIGHT + 10,
+                  left: `calc(${toPercent(alert.timestamp, start, end)}% - 4px)`,
+                  top: (ROW_HEIGHT - TRACK_HEIGHT) / 2 - 6,
+                  width: 8,
+                  height: TRACK_HEIGHT + 12,
                 }
           }
         >
-          {!compact && <Icon size={8} className="text-panel" aria-hidden />}
+          {!compact && <Icon size={9} className="text-panel" aria-hidden />}
         </button>
       );
     });
@@ -102,34 +102,34 @@ export function Timeline({
   const zoomButton = (Icon: typeof ZoomIn, next: number, label: string) => (
     <button
       type="button"
-      className="btn px-1.5 py-1"
+      className="btn px-2 py-1"
       onClick={() => onZoomChange(next)}
       disabled={next === zoom || next < ZOOM_MIN || next > ZOOM_MAX}
       aria-label={label}
       title={label}
     >
-      <Icon size={13} />
+      <Icon size={14} />
     </button>
   );
 
   return (
     <section className="panel flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="Detection timeline">
       <header className="panel-header">
-        <span>Detections · last hour</span>
-        <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 normal-case tracking-normal sm:gap-x-3">
-          <span className="flex items-center gap-1 text-muted">
-            <span className="font-mono text-fg">{alerts.length}</span> <span className="hidden sm:inline">detected</span>
+        <span>Detections · Last hour</span>
+        <span className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 normal-case tracking-normal sm:gap-x-4">
+          <span className="flex items-center gap-1.5 text-muted">
+            <span className="font-semibold text-fg">{alerts.length}</span> <span className="hidden sm:inline">detected</span>
           </span>
-          <span className="flex shrink-0 items-center gap-1" role="group" aria-label="Timeline zoom">
+          <span className="flex shrink-0 items-center gap-1.5" role="group" aria-label="Timeline zoom">
             {zoomButton(ZoomOut, Math.max(ZOOM_MIN, zoom / 2), "Zoom out")}
-            <span className="w-8 text-center font-mono text-[10px] text-fg">{zoom}×</span>
+            <span className="w-9 text-center font-medium text-fg">{zoom}×</span>
             {zoomButton(ZoomIn, Math.min(ZOOM_MAX, zoom * 2), "Zoom in")}
           </span>
         </span>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        {groups.length === 0 && <p className="py-6 text-center text-xs text-muted">No detections in window</p>}
+        {groups.length === 0 && <p className="py-8 text-center text-sm text-muted">No detections in window</p>}
 
         {groups.map(({ cameraId, list }) => {
           const open = cameraId === openCameraId;
@@ -142,53 +142,51 @@ export function Timeline({
                   onClick={() => onToggleCamera(cameraId)}
                   aria-expanded={open}
                   aria-controls={panelId}
-                  className={`flex w-full items-center gap-2 px-2 py-2 text-left hover:bg-surface sm:px-3 ${open ? "bg-surface" : ""}`}
+                  className={`flex w-full items-center gap-3 px-3.5 py-3 text-left hover:bg-surface sm:px-4 ${open ? "bg-surface" : ""}`}
                 >
                   <ChevronDown
-                    size={13}
+                    size={14}
                     className={`shrink-0 text-muted transition-transform ${open ? "" : "-rotate-90"}`}
                     aria-hidden
                   />
-                  <span className="w-[64px] shrink-0 truncate font-mono text-[10px] text-muted sm:w-[104px] sm:text-[11px]">
+                  <span className="w-[72px] shrink-0 truncate font-semibold text-xs text-muted sm:w-[120px] sm:text-sm">
                     {cameraId.toUpperCase()}
                   </span>
-                  <span className="relative h-3 min-w-0 flex-1 overflow-hidden rounded-sm bg-border/40">
+                  <span className="relative h-3.5 min-w-0 flex-1 overflow-hidden rounded bg-border/40">
                     {markers(list, true)}
                   </span>
-                  <span className="shrink-0 font-mono text-[10px] text-muted">{list.length}</span>
+                  <span className="shrink-0 font-medium text-xs text-muted">{list.length}</span>
                 </button>
               </h3>
 
-              {/* Open accordion: Side-by-side layout (Event list on left, Event timeline on right) */}
+              {/* Open accordion: Side-by-side layout with generous spacing */}
               <div
                 id={panelId}
-                className={open ? "border-t border-border/60 grid grid-cols-1 lg:grid-cols-[280px_1fr]" : "hidden"}
+                className={open ? "border-t border-border/60 grid grid-cols-1 lg:grid-cols-[320px_1fr]" : "hidden"}
               >
                 {/* Left: Event list (scrolls vertically) */}
-                <div className="max-h-52 overflow-y-auto overscroll-contain border-b border-border/60 p-2 lg:border-b-0 lg:border-r sm:p-3">
-                  <ul className="space-y-0.5">
+                <div className="max-h-60 overflow-y-auto overscroll-contain border-b border-border/60 p-3 lg:border-b-0 lg:border-r sm:p-4">
+                  <ul className="space-y-1.5">
                     {list.map((alert) => (
-                      <li key={alert.id} className="leading-tight">
+                      <li key={alert.id} className="leading-relaxed">
                         <button
                           type="button"
                           onClick={() => onSelect(alert)}
                           aria-pressed={alert.id === selectedId}
-                          className={`flex w-full items-center justify-between gap-2 rounded px-1.5 py-1 text-[11px] hover:bg-surface ${
-                            alert.id === selectedId ? "bg-surface" : ""
+                          className={`flex w-full items-center justify-between gap-3 rounded-md px-2.5 py-1.5 text-xs hover:bg-surface ${
+                            alert.id === selectedId ? "bg-surface font-medium" : ""
                           }`}
                         >
-                          <span className="min-w-0 truncate">
-                            <span className={`mr-1.5 ${ALERT_TEXT_COLORS[alert.level]}`} aria-hidden>
-                              ●
-                            </span>
-                            {alert.label}
+                          <span className="min-w-0 truncate flex items-center gap-2">
+                            <span className={`h-2 w-2 rounded-full ${ALERT_TEXT_COLORS[alert.level].replace('text-', 'bg-')}`} aria-hidden />
+                            <span className="truncate">{alert.label}</span>
                             {alert.confidence !== undefined && (
-                              <span className="ml-1.5 font-mono text-[10px] text-muted">
+                              <span className="text-muted text-[11px]">
                                 {Math.round(alert.confidence * 100)}%
                               </span>
                             )}
                           </span>
-                          <span className="shrink-0 font-mono text-[10px] text-muted">{formatClock(alert.timestamp)}</span>
+                          <span className="shrink-0 text-muted text-[11px]">{formatClock(alert.timestamp)}</span>
                         </button>
                       </li>
                     ))}
@@ -196,13 +194,13 @@ export function Timeline({
                 </div>
 
                 {/* Right: Event timeline (ticks + track, scrolls horizontally with zoom) */}
-                <div className="overflow-x-auto overflow-y-hidden overscroll-x-contain p-2 sm:p-3 flex items-center">
+                <div className="overflow-x-auto overflow-y-hidden overscroll-x-contain p-3.5 sm:p-4 flex items-center">
                   <div style={{ width: trackWidth }} className="min-w-full">
-                    <div className="relative h-4 border-b border-border">
+                    <div className="relative h-5 border-b border-border pb-1">
                       {ticks.map((tick, index) => (
                         <span
                           key={tick}
-                          className={`absolute top-0 font-mono text-[10px] text-muted ${
+                          className={`absolute top-0 text-[11px] text-muted ${
                             index === 0 ? "left-0" : index === ticks.length - 1 ? "right-0" : "-translate-x-1/2"
                           }`}
                           style={
@@ -216,9 +214,9 @@ export function Timeline({
                       ))}
                     </div>
 
-                    <div className="relative mt-2">
+                    <div className="relative mt-3">
                       <div
-                        className="pointer-events-none absolute bottom-0 top-0 z-10 w-px bg-accent/50"
+                        className="pointer-events-none absolute bottom-0 top-0 z-10 w-px bg-accent/60"
                         style={{ left: `${nowPercent}%` }}
                         aria-hidden
                       />

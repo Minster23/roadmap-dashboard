@@ -1,5 +1,5 @@
 import type { Alert, AlertLevel, Camera } from "../types";
-import { CAMERAS, placeholderImage } from "./mock";
+import { placeholderImage } from "./utils";
 
 /** Event codes the detector emits today, with their display text and severity. */
 const EVENTS: Record<string, { label: string; level: AlertLevel }> = {
@@ -50,9 +50,9 @@ function toEvent(event: string): { label: string; level: AlertLevel } {
  * Converts one pushed frame into alerts.
  * Ids are stable per camera + timestamp so a re-delivered frame does not duplicate rows.
  */
-export function detectionsToAlerts(payload: DetectionRequest): Alert[] {
+export function detectionsToAlerts(payload: DetectionRequest, cameras: Camera[] = []): Alert[] {
   const cameraId = payload.Camera;
-  const location = CAMERAS.find((camera) => camera.id.toLowerCase() === cameraId.toLowerCase())?.location ?? cameraId;
+  const location = cameras.find((camera) => camera.id.toLowerCase() === cameraId.toLowerCase())?.location ?? cameraId;
   return payload.detection
     .filter((d) => d.confidence >= MIN_CONFIDENCE)
     .map((d) => {
